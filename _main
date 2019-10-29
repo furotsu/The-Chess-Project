@@ -1,5 +1,6 @@
 #include <iostream>
 #include <math.h>
+#include "Chess.h"
 using namespace std;
 /*
 	1	2	3	4	5	6	7	8
@@ -14,56 +15,27 @@ using namespace std;
 1				WHITE				1
 	a	b	c	d	e	f	g	h
 	1	2	3	4	5	6	7	8
-*/
+*/ 
 
 int ah_to_int(char c) {
-	switch (c - 'a') {
-	case 0: return 1;
-		break;
-	case 1: return 2;
-		break;
-	case 2: return 3;
-		break;
-	case 3: return 4;
-		break;
-	case 4: return 5;
-		break;
-	case 5: return 6;
-		break;
-	case 6: return 7;
-		break;
-	case 7: return 8;
-		break;
-		return -1;
-	}
+	return c - 'a' + 1;
 }
 
-string int_to_ah(int i) {
-	switch (i) {
-	case 1: return "a";
-		break;
-	case 2: return "b";
-		break;
-	case 3: return "c";
-		break;
-	case 4: return "d";
-		break;
-	case 5: return "e";
-		break;
-	case 6: return "f";
-		break;
-	case 7: return "g";
-		break;
-	case 8: return "h";
-		break;
-		return "sosy";
-	}
+char int_to_ah(int i) {
+	return 'a' + i - 1;
 }
 
 class Chessman {
 protected:
 	int vertical;
 	int horizontal;
+
+	bool location_out_board(int vertical, int horizontal) {
+		if (vertical > 8 || vertical < 1 || horizontal >8 || horizontal < 1) {
+			return true;
+		}
+		return false;
+	}
 
 	virtual bool can_it_move_to_position(int vertical, int horizontal) = 0;
 public:
@@ -76,6 +48,8 @@ public:
 	}
 
 	void move_to_position(int vertical, int horizontal) {
+		if (location_out_board(vertical, horizontal))
+			throw "This position location out board!";
 		if (can_it_move_to_position(vertical, horizontal)) {
 			this->vertical = vertical;
 			this->horizontal = horizontal;
@@ -83,26 +57,52 @@ public:
 		else
 			throw "Can not move to this position!";
 	}
-	void print_the_position() {
-		cout << "(";
-		cout << int_to_ah(vertical);
-		cout << "; ";
-		cout << horizontal;
-		cout << ")";
+	string to_string_position() {
+		string s = "";
+		s += int_to_ah(vertical);
+		s += horizontal + '0';
+		return s;
 	}
+	virtual char in_Console() = 0;
 };
 
 class White_Pawn : public Chessman {
 protected:
 	bool can_it_move_to_position(int vertical, int horizontal) {
-		if (vertical == this->get_vertical() && horizontal == this->get_horizontal() + 1)
-			return true;
+		if (vertical == this->get_vertical()) {
+			if (horizontal == this->get_horizontal() + 1 || (this->get_horizontal() == 2 && horizontal == this->get_horizontal() + 2)) {
+				return true;
+			}
+		}
 		return false;
 	}
 public:
 	White_Pawn(int vertical, int horizontal) {
 		this->vertical = vertical;
 		this->horizontal = horizontal;
+	}
+	char in_Console() {
+		return 'P';
+	}
+};
+
+class Black_Pawn : public Chessman {
+protected:
+	bool can_it_move_to_position(int vertical, int horizontal) {
+		if (vertical == this->get_vertical()) {
+			if (horizontal == this->get_horizontal() - 1 || (this->get_horizontal() == 7 && horizontal == this->get_horizontal() - 2)) {
+				return true;
+			}
+		}
+		return false;
+	}
+public:
+	Black_Pawn(int vertical, int horizontal) {
+		this->vertical = vertical;
+		this->horizontal = horizontal;
+	}
+	char in_Console() {
+		return 'P';
 	}
 };
 
@@ -118,6 +118,9 @@ public:
 		this->vertical = vertical;
 		this->horizontal = horizontal;
 	}
+	char in_Console() {
+		return 'K';
+	}
 };
 
 class Queen : public Chessman {
@@ -131,6 +134,9 @@ public:
 	Queen(int vertical, int horizontal) {
 		this->vertical = vertical;
 		this->horizontal = horizontal;
+	}
+	char in_Console() {
+		return 'Q';
 	}
 };
 
@@ -146,6 +152,9 @@ public:
 		this->vertical = vertical;
 		this->horizontal = horizontal;
 	}
+	char in_Console() {
+		return 'B';
+	}
 };
 
 class Rook : public Chessman {
@@ -159,6 +168,9 @@ public:
 	Rook(int vertical, int horizontal) {
 		this->vertical = vertical;
 		this->horizontal = horizontal;
+	}
+	char in_Console() {
+		return 'R';
 	}
 };
 
@@ -174,10 +186,40 @@ public:
 		this->vertical = vertical;
 		this->horizontal = horizontal;
 	}
+	char in_Console() {
+		return 'K';
+	}
 };
 
+void print_to_Console(Chessman* white_team[16], Chessman* black_team[16]) {
+	cout << "  a b c d e f g h" << endl;
+	cout << "  _______________" << endl;
+	for (int i_horizontal = 8; i_horizontal >= 1; i_horizontal--) {
+		cout << i_horizontal << "|";
+		for (int i_vertical = 1; i_vertical <= 8; i_vertical++) {
+			char demonstrate_in_Console = ' ';
+			for (int i = 0; i < 16; i++) {
+				if (white_team[i]->get_vertical() == i_vertical && white_team[i]->get_horizontal() == i_horizontal) {
+					demonstrate_in_Console = white_team[i]->in_Console();
+					break;
+				}
+			}
+			for (int i = 0; i < 16; i++) {
+				if (black_team[i]->get_vertical() == i_vertical && black_team[i]->get_horizontal() == i_horizontal) {
+					demonstrate_in_Console = black_team[i]->in_Console() + 32;
+					break;
+				}
+			}
+
+			cout << demonstrate_in_Console << ' ';
+		}
+		cout << "\n";
+	}
+	cout << "---------------------------------------------------------------------------" << endl << endl;
+}
+
 int main() {
-	Chessman* white_team[16];
+	Chessman* white_team[16]; {
 	white_team[0] = &White_Pawn(1, 2);
 	white_team[1] = &White_Pawn(2, 2);
 	white_team[2] = &White_Pawn(3, 2);
@@ -186,47 +228,99 @@ int main() {
 	white_team[5] = &White_Pawn(6, 2);
 	white_team[6] = &White_Pawn(7, 2);
 	white_team[7] = &White_Pawn(8, 2);
-
-	white_team[8] = &Knight(2, 1);
-	white_team[9] = &Knight(7, 1);
-	white_team[10] = &Queen(4, 1);
-	white_team[11] = &Bishop(3, 1);
-	white_team[12] = &Bishop(6, 1);
-	white_team[13] = &Rook(1, 1);
-	white_team[14] = &Rook(8, 1);
-	white_team[15] = &King(5, 1);
-
+	white_team[8] = &King(5, 1);
+	white_team[9] = &Queen(4, 1);
+	white_team[10] = &Rook(1, 1);
+	white_team[11] = &Rook(8, 1);
+	white_team[12] = &Knight(2, 1);
+	white_team[13] = &Knight(7, 1);
+	white_team[14] = &Bishop(3, 1);
+	white_team[15] = &Bishop(6, 1);
+	}
+	Chessman* black_team[16]; {
+	black_team[0] = &Black_Pawn(1, 7);
+	black_team[1] = &Black_Pawn(2, 7);
+	black_team[2] = &Black_Pawn(3, 7);
+	black_team[3] = &Black_Pawn(4, 7);
+	black_team[4] = &Black_Pawn(5, 7);
+	black_team[5] = &Black_Pawn(6, 7);
+	black_team[6] = &Black_Pawn(7, 7);
+	black_team[7] = &Black_Pawn(8, 7);
+	black_team[8] = &King(5, 8);
+	black_team[9] = &Queen(4, 8);
+	black_team[10] = &Rook(1, 8);
+	black_team[11] = &Rook(8, 8);
+	black_team[12] = &Knight(2, 8);
+	black_team[13] = &Knight(7, 8);
+	black_team[14] = &Bishop(3, 8);
+	black_team[15] = &Bishop(6, 8);
+	}
 
 	int vertical_1, horizontal_1, vertical_2, horizontal_2;
 	char vertical_1_char, vertical_2_char;
 
+	print_to_Console(white_team, black_team);
+
+	int turn = 0;
+
 	while (true) {
 		cin >> vertical_1_char >> horizontal_1;
 		vertical_1 = ah_to_int(vertical_1_char);
-		int i = 0;
-		for (; i < 16; i++) {
-			if (white_team[i]->get_vertical() == vertical_1 && white_team[i]->get_horizontal() == horizontal_1) {
-				break;
+		if (turn % 2 == 0) {
+			int i = 0;
+			for (; i < 16; i++) {
+				if (white_team[i]->get_vertical() == vertical_1 && white_team[i]->get_horizontal() == horizontal_1) {
+					break;
+				}
 			}
-		}
-		if (i >= 16) {
-			cout << "Incorrect position, try again!\n";
-			continue;
-		}
-		cin >> vertical_2_char >> horizontal_2;
-		vertical_2 = ah_to_int(vertical_2_char);
-		try {
-			cout << "Move: ";
-			white_team[i]->print_the_position();
-			cout << " -> ";
+			if (i >= 16) {
+				cout << "Incorrect position, try again!\n";
+				continue;
+			}
+			cin >> vertical_2_char >> horizontal_2;
+			vertical_2 = ah_to_int(vertical_2_char);
+			try {
+				string print_moving = "Move: " + white_team[i]->to_string_position() + " -> ";
 
-			white_team[i]->move_to_position(vertical_2, horizontal_2);
+				white_team[i]->move_to_position(vertical_2, horizontal_2);
 
-			white_team[i]->print_the_position();
-			cout << "\n";
+				print_moving += white_team[i]->to_string_position();
+				cout << print_moving << "\n";
+				turn++;
+			}
+			catch (const char* msg) {
+				cerr << msg << endl;
+			}
+
+			print_to_Console(white_team, black_team);
 		}
-		catch (const char* msg) {
-			cerr << msg << endl;
+		else {
+			int i = 0;
+			for (; i < 16; i++) {
+				if (black_team[i]->get_vertical() == vertical_1 && black_team[i]->get_horizontal() == horizontal_1) {
+					break;
+				}
+			}
+			if (i >= 16) {
+				cout << "Incorrect position, try again!\n";
+				continue;
+			}
+			cin >> vertical_2_char >> horizontal_2;
+			vertical_2 = ah_to_int(vertical_2_char);
+			try {
+				string print_moving = "Move: " + black_team[i]->to_string_position() + " -> ";
+
+				black_team[i]->move_to_position(vertical_2, horizontal_2);
+
+				print_moving += black_team[i]->to_string_position();
+				cout << print_moving << "\n";
+				turn++;
+			}
+			catch (const char* msg) {
+				cerr << msg << endl;
+			}
+
+			print_to_Console(white_team, black_team);
 		}
 	}
 }
